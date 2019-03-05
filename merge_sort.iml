@@ -1,0 +1,54 @@
+let rec merge (l : int list) (m : int list) =
+  match l, m with
+  | [], _ -> m
+  | _, [] -> l
+  | a :: ls, b :: ms ->
+    if a < b then
+      a :: (merge ls m)
+    else
+      b :: (merge l ms)
+[@@adm l, m];;
+
+assert((merge [1;2;3] [4;5;6]) = [1;2;3;4;5;6]);;
+
+merge [1;4;7] [2;3;5;6];;
+
+lemma merge_sum l1 l2 = List.length(merge l1 l2) = List.length l1 + List.length l2 [@@auto][@@rw];;
+
+let rec odds l =
+  match l with
+  | [] -> []
+  | [x] -> [x]
+  | x :: y :: rst -> x :: odds rst;;
+
+odds [1;2;3;4;5;6;7];;
+
+let rec evens l =
+  match l with
+  | [] -> []
+  | [x] -> []
+  | x :: y :: rst -> y :: evens rst;;
+
+evens [1;2;3;4;5;6];;
+
+lemma odds_even_totality l = List.length l = List.length (evens l) + List.length (odds l) [@@auto][@@rw];;
+
+let rec merge_sort l =
+  match l with
+  | [] -> []
+  | _ :: ls -> merge (merge_sort (odds l)) (merge_sort (odds ls));;
+
+assert((merge_sort [5;2;3;7;4;1;2]) = [1;2;3;4;5;6;7]);;
+
+lemma merge_sort_empty_arr = (merge_sort [] = []) [@@auto] [@@rw];;
+
+lemma merge_nil l = List.length(merge [] l) = List.length(l) [@@rw];;
+
+(*
+#max_induct 1;;
+*)
+verify  (fun l -> List.length(odds (merge_sort l)) = List.length (odds l)) [@@induct];;
+
+(* verify (fun l -> List.length(merge_sort l) = List.length l);; *)
+
+(* verify  (fun l -> List.length(odds (merge_sort l)) = List.length (odds l)) [@@induct];; *)
