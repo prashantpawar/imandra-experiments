@@ -31,24 +31,51 @@ let rec evens l =
 
 evens [1;2;3;4;5;6];;
 
-lemma odds_even_totality l = List.length l = List.length (evens l) + List.length (odds l) [@@auto][@@rw];;
+lemma odds_even_totality l = List.length l = List.length (evens l) + List.length (odds l) [@@auto] ;;
+
+let merge_sort_measure x = 
+  Ordinal.of_int (List.length x);;
+
+theorem odds_len_1 x =
+x <> [] && List.tl x <> [] ==> (List.length (odds x) [@trigger]) < List.length x
+[@@induct functional odds] [@@forward_chaining];;
 
 let rec merge_sort l =
   match l with
   | [] -> []
-  | _ :: ls -> merge (merge_sort (odds l)) (merge_sort (odds ls));;
+  | [_] -> l
+  | _ :: ls -> merge (merge_sort (odds l)) (merge_sort (odds ls))
+[@@measure merge_sort_measure l];;
 
-assert((merge_sort [5;2;3;7;4;1;2]) = [1;2;3;4;5;6;7]);;
+(* # Proving merge sort correct *)
 
-lemma merge_sort_empty_arr = (merge_sort [] = []) [@@auto] [@@rw];;
+let rec is_sorted l =
+  match l with
+  | [] | [_] -> true
+  | a :: b :: ls -> 
+    if a <= b then is_sorted (b :: ls)
+    else false;;
 
-lemma merge_nil l = List.length(merge [] l) = List.length(l) [@@rw];;
+theorem merge_sort_sorts l = is_sorted (merge_sort l) [@@induct];;
+
+(* # Proving that Merge sort contains the right elements *)
+
+let rec num_occurs x l =
+  match l with
+  | [] -> 0
+  | y :: ys ->
+    if (x = y) then 1 + num_occurs x ys
+    else num_occurs x ys;;
+
+let is_subset l1 l2 = List.for_all (fun x -> num_occurs x l1 = num_occurs x l2) l1;; 
+
+let same_elements l1 l2 = is_subset l1 l2 && is_subset l2 l1;;
 
 (*
-#max_induct 1;;
+theorem same_elements_correct l = same_elements l l = true [@@induct];;
 *)
-verify  (fun l -> List.length(odds (merge_sort l)) = List.length (odds l)) [@@induct];;
 
-(* verify (fun l -> List.length(merge_sort l) = List.length l);; *)
-
-(* verify  (fun l -> List.length(odds (merge_sort l)) = List.length (odds l)) [@@induct];; *)
+(* theorem correct_elements l = List.for_all (fun x -> num_occurs x l = num_occurs x (merge_sort l)) (merge_sort l);; *)
+(*
+verify (fun correct_elements l -> List.for_all (fun x -> num_occurs x l = num_occurs x (merge_sort l)) (merge_sort l)) [@@induct];;
+*)
